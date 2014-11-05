@@ -3,6 +3,8 @@
 import os
 import errno
 from collections import defaultdict
+import tempfile
+import shutil
 
 from fuse import FUSE, FuseOSError, Operations
 
@@ -14,6 +16,12 @@ KEY = 'AWaRttWO1t-YDQldf7ebZQkhy3AVy-xvME1WMVEb54E='
 
 class EVFS(Operations):
     def __init__(self, root):
+        tmp_dir = os.path.join(tempfile.gettempdir(), 'cryptobox')
+
+        if os.path.isdir(tmp_dir):
+            shutil.rmtree(tmp_dir)
+        os.mkdir(tmp_dir)
+
         self.root = root
         self.dirty = defaultdict(bool)
         self.opens = defaultdict(int)
@@ -27,7 +35,8 @@ class EVFS(Operations):
     def _tmp_full_path(self, partial):
         if partial.startswith("/"):
             partial = partial[1:]
-        path = os.path.join('/tmp/cryptobox/', partial)
+        tmp = tempfile.gettempdir()
+        path = os.path.join(tmp, 'cryptobox', partial)
         return path
 
     #Filesystem operations
@@ -115,9 +124,9 @@ class EVFS(Operations):
             raw = f.read()
 
         if len(raw) > 0:
-            dir = os.path.dirname(tmp_path)
-            if not os.path.exists(dir):
-                os.makedirs(dir)
+            dirs = os.path.dirname(tmp_path)
+            if not os.path.exists(dirs):
+                os.makedirs(dirs)
             with open(tmp_path, 'wb') as f:
                 f.write(decrypt(KEY, raw))
 
@@ -128,11 +137,10 @@ class EVFS(Operations):
         #create both /tmp/path and /root/path
         full_path = self._full_path(path)
         tmp_path = self._tmp_full_path(path)
-        print "TMP", tmp_path
         os.open(full_path, os.O_WRONLY | os.O_CREAT, mode)
-        dir = os.path.dirname(tmp_path)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        dirs = os.path.dirname(tmp_path)
+        if not os.path.exists(dirs):
+            os.makedirs(dirs)
         return os.open(tmp_path, os.O_WRONLY | os.O_CREAT, mode)
 
     def read(self, path, length, offset, fh):
@@ -186,7 +194,6 @@ class EVFS(Operations):
         #TODO: make this threaded
         for _file in self.opens.keys():
             if self.opens[_file] <= 0:
-                print "REMOVING", _file
                 os.unlink(self._tmp_full_path(_file))
                 del self.opens[_file]
 
