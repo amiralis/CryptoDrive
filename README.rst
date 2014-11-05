@@ -1,4 +1,4 @@
-CryptoBox
+CryptoDrive
 =========
 
-Crypto Box: a Virtual Encrypted Filesystem
+CryptoDrive: a Virtual Encrypted Filesystem
