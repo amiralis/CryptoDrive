@@ -6,7 +6,7 @@ from collections import defaultdict
 import tempfile
 import shutil
 
-from fuse import FUSE, FuseOSError, Operations
+from fuse import FuseOSError, Operations
 
 from util import encrypt, decrypt
 
@@ -200,11 +200,3 @@ class EVFS(Operations):
             # Remove the file from dirty list
             if _file in self.dirty:
                 del self.dirty[_file]
-
-
-def main(mountpoint, root):
-    FUSE(EVFS(root), mountpoint, foreground=True)
-
-
-if __name__ == '__main__':
-    main('mnt', 'root')
